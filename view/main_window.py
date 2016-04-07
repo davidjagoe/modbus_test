@@ -13,21 +13,34 @@ def load_ui(window):
     
 class MainWindow(qt.QMainWindow):
 
-    def __init__(self):
+    BLACK = "QLCDNumber{color:rgb(0, 0, 0);}"
+    RED = "QLCDNumber{color:rgb(255, 0, 0);}"
+
+    def __init__(self, application):
         qt.QMainWindow.__init__(self)
         load_ui(self)
+        self._application = application
+        self._setup()
 
+    def _setup(self):
+        # self.rpmDisplay.setSegmentStyle(qt.QLCDNumber.Flat)
+        self.alarmLabel.setText("")
+        self._application.listen(self._update_value)
+        
     def closeEvent(self, *args):
         qt.QMainWindow.closeEvent(self, *args)
         
-    def _layout(self):
-        pass
-
-    def _close(self):
-        self.close()
-
+    def _update_value(self, value):
+        self.rpmDisplay.display(value)
+        if value <= 10:
+            self.alarmLabel.setText("LOW")
+            self.rpmDisplay.setStyleSheet(self.RED)
+        else:
+            self.alarmLabel.setText("")
+            self.rpmDisplay.setStyleSheet(self.BLACK)
+        
 
 ### Public Interface
 
-def get_main_window():
-    return MainWindow()
+def get_main_window(application):
+    return MainWindow(application)
