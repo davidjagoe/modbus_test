@@ -41,6 +41,7 @@ class RPMCalculator(QObject):
         self._gateway = gateway_device
         self._register = register_number
         self._rpm = 0
+        # self._rpms = [0]
         self._state = None
         self._t = 0
 
@@ -53,7 +54,15 @@ class RPMCalculator(QObject):
             return ON
         else:
             return SWITCHING
-    
+
+    def _set_rpm(self):
+        t = time.time()
+        delta = t - self._t
+        self._t = t
+        period = delta # in seconds
+        freq = 1.0 / period # in Hz
+        self._rpm = round(freq * 60.0, 0)
+        
     def calculate_rpm(self):
         switch_state = self._read_sensor()
         if switch_state is not SWITCHING:
@@ -61,13 +70,9 @@ class RPMCalculator(QObject):
                 self._t = time.time()
                 self._state = switch_state
             elif switch_state != self._state:
-                t = time.time()
-                delta = t - self._t
-                self._t = t
+                if switch_state is ON:
+                    self._set_rpm()
                 self._state = switch_state
-                period = 2*delta # in seconds
-                freq = 1.0 / period # in Hz
-                self._rpm = round(freq * 60.0, 0)
             else:
                 t = time.time()
                 delta = t - self._t
