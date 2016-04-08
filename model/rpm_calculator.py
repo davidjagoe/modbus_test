@@ -32,7 +32,8 @@ class RPMCalculator(QObject):
     N_DEC_PLACES = 0
     LIMIT_OFF = 3000 # Approx 4.73 mA
     LIMIT_ON = 30000 # Approx 11.36 mA
-    ZERO_CONSTANT = 5 # seconds
+    ZERO_CONSTANT = 6 # seconds
+    FILTER_LENGTH = 10
 
     rpm = pyqtSignal(int)
     
@@ -60,11 +61,16 @@ class RPMCalculator(QObject):
         self._t = t
         period = delta # in seconds
         freq = 1.0 / period # in Hz
-        self._rpms.append(round(freq * 60.0, 0))
+        rpm = freq * 60.0
+        if rpm > 30:
+            return
+        if len(self._rpms) == self.FILTER_LENGTH:
+            self._rpms = self._rpms[1:]
+        self._rpms.append(rpm)
 
     def _emit_rpm(self):
-        mean = float(sum(self._rpm)) / len(self._rpm)
-        self.rpm.emit(mean)
+        mean = float(sum(self._rpms)) / len(self._rpms)
+        self.rpm.emit(round(mean, 0))
 
     def calculate_rpm(self):
         switch_state = self._read_sensor()
