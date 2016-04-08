@@ -13,8 +13,9 @@ def load_ui(window):
     
 class MainWindow(qt.QMainWindow):
 
-    BLACK = "QLCDNumber{color:rgb(0, 0, 0);}"
-    RED = "QLCDNumber{color:rgb(255, 0, 0);}"
+    BLACK = "QLabel {color:rgb(0, 0, 0);}"
+    AMBER = "QLabel {color:rgb(255, 255, 0);}"
+    RED = "QLabel {color:rgb(255, 0, 0);}"
 
     def __init__(self, application):
         qt.QMainWindow.__init__(self)
@@ -23,21 +24,27 @@ class MainWindow(qt.QMainWindow):
         self._setup()
 
     def _setup(self):
-        # self.rpmDisplay.setSegmentStyle(qt.QLCDNumber.Flat)
-        self.alarmLabel.setText("")
+        self.rpmLabel.setText("LOW")
         self._application.listen(self._update_value)
-        
+    
     def closeEvent(self, *args):
         qt.QMainWindow.closeEvent(self, *args)
-        
+    
     def _update_value(self, value):
-        self.rpmDisplay.display(value)
-        if value <= 10:
-            self.alarmLabel.setText("LOW")
-            self.rpmDisplay.setStyleSheet(self.RED)
+        print value
+        self.rpmLabel.setText(str(value))
+        if value < 5:
+            self.rpmLabel.setText("STALL")
+            self.rpmLabel.setStyleSheet(self.RED)
+        elif value < 10:
+            self.rpmLabel.setText("LOW")
+            self.rpmLabel.setStyleSheet(self.AMBER)
+        elif value <= 20:
+            self.rpmLabel.setText("OK")
+            self.rpmLabel.setStyleSheet(self.BLACK)
         else:
-            self.alarmLabel.setText("")
-            self.rpmDisplay.setStyleSheet(self.BLACK)
+            self.rpmLabel.setText("HIGH")
+            self.rpmLabel.setStyleSheet(self.RED)
         
 
 ### Public Interface

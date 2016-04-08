@@ -32,7 +32,7 @@ class RPMCalculator(QObject):
     N_DEC_PLACES = 0
     LIMIT_OFF = 3000 # Approx 4.73 mA
     LIMIT_ON = 30000 # Approx 11.36 mA
-    ZERO_CONSTANT = 5 # seconds
+    ZERO_CONSTANT = 10 # seconds
 
     rpm = pyqtSignal(int)
     
