@@ -75,3 +75,15 @@ class RPMCalculator(QObject):
                     self._t = t
                     self._rpm = 0
         self.rpm.emit(self._rpm)
+
+
+class FakeRPMCalculator(QObject):
+
+    rpm = pyqtSignal(int)
+
+    def __init__(self, gateway_device, register_number):
+        QObject.__init__(self)
+
+    def calculate_rpm(self):
+        self.rpm.emit(15)
+    

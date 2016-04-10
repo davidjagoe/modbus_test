@@ -8,7 +8,7 @@ import PyQt4.QtCore as qtc
 import PyQt4.QtGui as qt
 
 from view.main_window import get_main_window
-from model.rpm_calculator import RPMCalculator
+from model.rpm_calculator import RPMCalculator, FakeRPMCalculator
 
 
 GATEWAY_ID = 1
@@ -50,8 +50,15 @@ class Application(qt.QApplication):
 
 
 def main():
-    gateway = minimalmodbus.Instrument("/dev/ttyUSB0", GATEWAY_ID)
-    calculator = RPMCalculator(gateway, _get_register_number(D1_NODE_ID))
+
+    import sys
+
+    if len(sys.argv) > 1 and sys.argv[1] == "test":
+        calculator = FakeRPMCalculator(None, None)
+    else:
+        gateway = minimalmodbus.Instrument("/dev/ttyUSB0", GATEWAY_ID)
+        calculator = RPMCalculator(gateway, _get_register_number(D1_NODE_ID))
+
     application = Application(calculator)
     main_window = get_main_window(application)
     main_window.show()
