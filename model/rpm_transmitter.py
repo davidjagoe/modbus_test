@@ -32,7 +32,8 @@ class RPMTransmitter(QObject):
 
     LIMIT_OFF = 3000 # Approx 4.73 mA
     LIMIT_ON = 30000 # Approx 11.36 mA
-
+    N_DEC_PLACES = 0
+    
     ZERO_AFTER = 6 # seconds
 
     rpm = pyqtSignal(int)
