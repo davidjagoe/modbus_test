@@ -98,6 +98,7 @@ class FakeTransmitter(QObject):
         t = time.time()
         if t - self._t >= 1:
             self._t = t
-            rpm = random.randint(0, 30)
+            # rpm = random.randint(0, 30)
+            rpm = random.normalvariate(15, 5)
             print "RPM: {0}".format(rpm)
             self.rpm.emit(rpm)
