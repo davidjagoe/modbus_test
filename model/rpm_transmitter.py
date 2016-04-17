@@ -34,7 +34,7 @@ class RPMTransmitter(QObject):
     LIMIT_ON = 30000 # Approx 11.36 mA
     N_DEC_PLACES = 0
     
-    ZERO_AFTER = 6 # seconds
+    ZERO_AFTER = 4 # seconds
 
     rpm = pyqtSignal(int)
     
@@ -60,7 +60,7 @@ class RPMTransmitter(QObject):
         t = time.time()
         delta = t - self._t
         self._t = t
-        period = delta # in seconds
+        period = 2 * delta # in seconds
         freq = 1.0 / period # in Hz
         rpm = freq * 60.0
         if rpm > 30:
@@ -68,23 +68,43 @@ class RPMTransmitter(QObject):
         else:
             self._rpm = rpm
 
-    def tick(self):
+    def _emit_rpm(self):
+        print self._rpm
+        self.rpm.emit(round(self._rpm, 0))
+
+    def transmitter_tick(self):
+        self._emit_rpm()
+        
+    def sensor_tick(self):
         switch_state = self._read_sensor()
         if switch_state is not SWITCHING:
+            # Do nothing if the sensor is busy switching
             if self._state is None:
+                # Initialization - only happens once
                 self._t = time.time()
                 self._state = switch_state
             elif switch_state != self._state:
+                # Change in state
                 self._state = switch_state
-                if switch_state is ON:
-                    self._calculate_rpm()
+                self._calculate_rpm()
+                # self._emit_rpm()
+                # if switch_state is ON:
+                #     print "Rising Edge"
+                #     print
+                #     # On a rising edge, calculate the RPM
+                #     self._calculate_rpm()
+                #     self._emit_rpm()
+                # else:
+                #     print "Falling Edge"
             else:
+                # No change in state; check for timeout
                 t = time.time()
                 delta = t - self._t
                 if delta > self.ZERO_AFTER:
+                    print "ZEROING"
                     self._t = t
                     self._rpm = 0
-        self.rpm.emit(round(self._rpm, 0))
+                    self._emit_rpm()
 
 
 class FakeTransmitter(QObject):

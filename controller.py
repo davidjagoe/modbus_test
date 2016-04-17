@@ -10,7 +10,7 @@ import PyQt4.QtGui as qt
 
 from view.main_window import get_main_window
 from model.rpm_transmitter import RPMTransmitter, FakeTransmitter
-from model.filters import EMAFilter, NoFilter
+from model.filters import EMAFilter, NoFilter, Simple
 
 
 GATEWAY_ID = 1
@@ -40,13 +40,19 @@ class Application(qt.QApplication):
         self._timer = None
         self._setup()
 
-    def _setup_timer(self):
+    def _setup_sensor_timer(self):
         self._timer = qtc.QTimer()
-        self._timer.timeout.connect(self._transmitter.tick)
+        self._timer.timeout.connect(self._transmitter.sensor_tick)
         self._timer.start(100)
         
+    def _setup_transmitter_timer(self):
+        self._ttimer = qtc.QTimer()
+        self._ttimer.timeout.connect(self._transmitter.transmitter_tick)
+        self._ttimer.start(1000)
+        
     def _setup(self):
-        self._setup_timer()
+        self._setup_sensor_timer()
+        self._setup_transmitter_timer()
 
     def listen(self, slot):
         self._emitter.rpm.connect(slot)
@@ -56,6 +62,7 @@ def _get_filter_class(filter_name):
     filters = {
         "no-filter": NoFilter,
         "ema": EMAFilter,
+        "simple": Simple,
     }
     return filters[filter_name]
 

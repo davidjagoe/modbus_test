@@ -1,5 +1,6 @@
 
 import os
+import time
 
 import PyQt4.QtCore as qtc
 import PyQt4.QtGui as qt
@@ -16,9 +17,12 @@ class MainWindow(qt.QMainWindow):
     BLACK = "QLCDNumber{color:rgb(0, 0, 0);}"
     RED = "QLCDNumber{color:rgb(255, 0, 0);}"
 
+    UPDATE_RATE_S = 1
+
     def __init__(self, application):
         qt.QMainWindow.__init__(self)
         load_ui(self)
+        self._t = 0
         self._application = application
         self._setup()
 
@@ -31,13 +35,16 @@ class MainWindow(qt.QMainWindow):
         qt.QMainWindow.closeEvent(self, *args)
         
     def _update_value(self, value):
-        self.rpmDisplay.display(value)
-        if value <= 10:
-            self.alarmLabel.setText("LOW")
-            self.rpmDisplay.setStyleSheet(self.RED)
-        else:
-            self.alarmLabel.setText("")
-            self.rpmDisplay.setStyleSheet(self.BLACK)
+        t = time.time()
+        if t - self._t >= self.UPDATE_RATE_S:
+            self._t = t
+            self.rpmDisplay.display(value)
+            if value <= 10:
+                self.alarmLabel.setText("LOW")
+                self.rpmDisplay.setStyleSheet(self.RED)
+            else:
+                self.alarmLabel.setText("")
+                self.rpmDisplay.setStyleSheet(self.BLACK)
         
 
 ### Public Interface
