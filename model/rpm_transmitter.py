@@ -38,32 +38,44 @@ class RPMTransmitter(QObject):
 
     rpm = pyqtSignal(int)
     
-    def __init__(self, gateway_device, register_number):
+    def __init__(self, gateway_device, register_numbers):
         QObject.__init__(self)
         self._gateway = gateway_device
-        self._register = register_number
+        self._registers = register_numbers
+        self._n_sensors = len(register_numbers)
         self._rpm = 0
-        self._state = None
+        self._state = [None]*self._n_sensors
         self._t = 0
 
-    def _read_sensor(self):
-        value = self._gateway.read_register(
-            self._register, self.N_DEC_PLACES)
-        if value < self.LIMIT_OFF:
-            return OFF
-        elif value > self.LIMIT_ON:
-            return ON
-        else:
-            return SWITCHING
+    def _read_sensors(self):
+        states = []
+
+        for register in self._registers:
+            value = self._gateway.read_register(
+                register, self.N_DEC_PLACES)
+            if value < self.LIMIT_OFF:
+                states.append(OFF)
+            elif value > self.LIMIT_ON:
+                states.append(ON)
+            else:
+                states.append(SWITCHING)
+
+        return states
 
     def _calculate_rpm(self):
         t = time.time()
         delta = t - self._t
         self._t = t
-        period = 2 * delta # in seconds
+
+        angular_delta = 180.0 / self._n_sensors
+        period = (360.0/angular_delta) * delta
         freq = 1.0 / period # in Hz
         rpm = freq * 60.0
         if rpm > 30:
+            # Sometimes we get a glitch from the sensor - probably due
+            # to getting a low reading between magnets. This results
+            # in a very high reading that we simply ignore. TODO:
+            # self._t would be wrong in this case!!
             self._rpm = self._rpm
         else:
             self._rpm = rpm
@@ -76,35 +88,24 @@ class RPMTransmitter(QObject):
         self._emit_rpm()
         
     def sensor_tick(self):
-        switch_state = self._read_sensor()
-        if switch_state is not SWITCHING:
-            # Do nothing if the sensor is busy switching
-            if self._state is None:
-                # Initialization - only happens once
-                self._t = time.time()
-                self._state = switch_state
-            elif switch_state != self._state:
-                # Change in state
-                self._state = switch_state
-                self._calculate_rpm()
-                # self._emit_rpm()
-                # if switch_state is ON:
-                #     print "Rising Edge"
-                #     print
-                #     # On a rising edge, calculate the RPM
-                #     self._calculate_rpm()
-                #     self._emit_rpm()
-                # else:
-                #     print "Falling Edge"
-            else:
-                # No change in state; check for timeout
-                t = time.time()
-                delta = t - self._t
-                if delta > self.ZERO_AFTER:
-                    print "ZEROING"
-                    self._t = t
-                    self._rpm = 0
-                    self._emit_rpm()
+        switch_states = self._read_sensors()
+        if all([switch_state is None for switch_state in self._states]):
+            # Initialization - only happens once
+            self._t = time.time()
+            self._state = switch_states
+        elif switch_states != self._state:
+            # Change in state
+            self._states = switch_state
+            self._calculate_rpm()
+        else:
+            # No change in state; check for timeout
+            t = time.time()
+            delta = t - self._t
+            if delta > self.ZERO_AFTER:
+                print "ZEROING"
+                self._t = t
+                self._rpm = 0
+                self._emit_rpm()
 
 
 class FakeTransmitter(QObject):

@@ -18,16 +18,19 @@ D1_NODE_ID = 11
 D2_NODE_ID = 12
 
 
-def _get_register_number(device_id):
+def _get_register_number(device_id, input_name):
 
     def _get_register_offset(register_name):
-        _REGISTER_OFFSETS = {"rpm_sensor": 2,}
+        _REGISTER_OFFSETS = {"AI1": 2, "AI2": 3}
         return _REGISTER_OFFSETS[register_name]
 
     def _get_device_offset(device_id):
         return 16 * device_id
 
-    return _get_device_offset(device_id) + _get_register_offset("rpm_sensor")
+    return _get_device_offset(device_id) + _get_register_offset(input_name)
+
+
+grn = _get_register_number
 
 
 class Application(qt.QApplication):
@@ -70,14 +73,16 @@ def _get_filter_class(filter_name):
 @click.command()
 @click.option("--test", default=False, help="Runs the code with fake transmitter instead of the Banner Wireless transmitter")
 @click.option("--filter_name", default="no-filter", help="Specifies the time-domain filter to use. Options are 'no-filter' and 'ema'")
-@click.option("--ema_alpha", default=0.8, help="Specifies the alpha parameter of the EMA filter")
+@click.option("--ema_alpha", default=0.3, help="Specifies the alpha parameter of the EMA filter")
 def main(test, filter_name, ema_alpha):
 
     if test:
         transmitter = FakeTransmitter()
     else:
         gateway = minimalmodbus.Instrument("/dev/ttyUSB0", GATEWAY_ID)
-        transmitter = RPMTransmitter(gateway, _get_register_number(D1_NODE_ID))
+        transmitter = RPMTransmitter(
+            gateway, (_get_register_number(D1_NODE_ID, "AI1"),
+                      _get_register_number(D1_NODE_ID, "AI2")))
 
     Constructor = _get_filter_class(filter_name)
     
