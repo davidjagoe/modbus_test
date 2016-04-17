@@ -30,8 +30,6 @@ def _get_register_number(device_id, input_name):
     return _get_device_offset(device_id) + _get_register_offset(input_name)
 
 
-grn = _get_register_number
-
 
 class Application(qt.QApplication):
 
@@ -80,9 +78,7 @@ def main(test, filter_name, ema_alpha):
         transmitter = FakeTransmitter()
     else:
         gateway = minimalmodbus.Instrument("/dev/ttyUSB0", GATEWAY_ID)
-        transmitter = RPMTransmitter(
-            gateway, (_get_register_number(D1_NODE_ID, "AI1"),
-                      _get_register_number(D1_NODE_ID, "AI2")))
+        transmitter = RPMTransmitter(gateway, _get_register_number(D1_NODE_ID, "AI1"), 2)
 
     Constructor = _get_filter_class(filter_name)
     

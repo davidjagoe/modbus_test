@@ -30,29 +30,26 @@ SWITCHING = _SWITCHING()
 
 class RPMTransmitter(QObject):
 
-    LIMIT_OFF = 3000 # Approx 4.73 mA
-    LIMIT_ON = 30000 # Approx 11.36 mA
-    N_DEC_PLACES = 0
+    LIMIT_OFF = 5000 # Approx 4.73 mA
+    LIMIT_ON = 10000 # Approx XXX - with two sensors, this value is lower
     
     ZERO_AFTER = 4 # seconds
 
     rpm = pyqtSignal(int)
     
-    def __init__(self, gateway_device, register_numbers):
+    def __init__(self, gateway_device, register_number, n_sensors):
         QObject.__init__(self)
         self._gateway = gateway_device
-        self._registers = register_numbers
-        self._n_sensors = len(register_numbers)
+        self._register = register_number
+        self._n_sensors = n_sensors
         self._rpm = 0
         self._state = [None]*self._n_sensors
         self._t = 0
 
     def _read_sensors(self):
         states = []
-
-        for register in self._registers:
-            value = self._gateway.read_register(
-                register, self.N_DEC_PLACES)
+        values = self._gateway.read_registers(self._register, self._n_sensors)
+        for value in values:
             if value < self.LIMIT_OFF:
                 states.append(OFF)
             elif value > self.LIMIT_ON:
@@ -81,7 +78,6 @@ class RPMTransmitter(QObject):
             self._rpm = rpm
 
     def _emit_rpm(self):
-        print self._rpm
         self.rpm.emit(round(self._rpm, 0))
 
     def transmitter_tick(self):
@@ -89,13 +85,14 @@ class RPMTransmitter(QObject):
         
     def sensor_tick(self):
         switch_states = self._read_sensors()
-        if all([switch_state is None for switch_state in self._states]):
+        if all([switch_state is None for switch_state in self._state]):
             # Initialization - only happens once
             self._t = time.time()
             self._state = switch_states
         elif switch_states != self._state:
             # Change in state
-            self._states = switch_state
+            print "CHANGE"
+            self._state = switch_states
             self._calculate_rpm()
         else:
             # No change in state; check for timeout
